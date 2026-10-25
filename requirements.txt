@@ -1,0 +1,6 @@
+# On a Jetson Nano (JetPack 4.6 / Python 3.6) the apt packages work too:
+#   sudo apt install python3-yaml python3-smbus python3-evdev
+# Jetson.GPIO ships with JetPack and is not listed here.
+PyYAML>=3.12
+smbus2>=0.4
+evdev>=0.7
