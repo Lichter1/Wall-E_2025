@@ -14,8 +14,7 @@ drive:
     inverted: false        # flip if the track runs backwards
   right:                   # L298N channel B -> right track
     pwm_pin: 33            # ENB  (hardware PWM, enable with jetson-io first)
-    in1_pin: 35            # IN3  (I2S audio would also want pin 35; move IN3
-                           #       if a MAX98357A amp is added later)
+    in1_pin: 13            # IN3  (not 35: pins 12/35/38/40 are the I2S audio bus)
     in2_pin: 37            # IN4
     inverted: false
   # The drive motors are 3-6 V TT gear motors. The L298N drops about 2 V, so:
@@ -51,6 +50,7 @@ servos:
 #   7  status LED (output)
 #   16 e-stop auxiliary contact (input)
 #   18 relay that enables drive power (output)
+#   12, 35, 38, 40 I2S audio: BCLK, LRCLK, mic data in, amp data out
 #   INA260 battery monitor on the same I2C bus at 0x41
 
 controller:

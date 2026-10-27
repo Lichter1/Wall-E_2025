@@ -66,7 +66,16 @@ automatically off. Join your Wi-Fi in the wizard or later with `nmtui`.
 
 ## 3. Base system
 
-SSH in from your PC (`ssh walle@walle.local`) and run:
+**Shortcut:** steps 3, 6 (Bluetooth tweak) and 7 are automated. SSH in from
+your PC (`ssh walle@walle.local`) and run
+
+```bash
+git clone https://github.com/Lichter1/Wall-E_2025.git ~/Wall-E_2025
+bash ~/Wall-E_2025/scripts/setup_jetson.sh      # add --headless to drop the desktop
+sudo reboot
+```
+
+then continue at step 4. The manual commands are below if you prefer them.
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -103,7 +112,32 @@ Choose *Configure Jetson 40pin Header* → *Configure header pins manually* →
 tick the **PWM** entries for pins **32** and **33** → Back → *Save pin changes*
 → *Save and reboot to reconfigure pins*.
 
-**Check:** reopen `jetson-io.py`; pins 32 and 33 show as PWM.
+Or without the menu (on the Xavier NX, pin 32 is `pwm8` and pin 33 is `pwm1`):
+
+```bash
+sudo /opt/nvidia/jetson-io/config-by-function.py -o dtb pwm1 pwm8
+sudo reboot
+```
+
+`-o dtb` adds a "JetsonIO" boot entry to `/boot/extlinux/extlinux.conf` and
+keeps the original "primary" entry as a fallback. (`-o dtbo` only writes an
+overlay file and does not change the boot config.)
+
+**Check:** `sudo /opt/nvidia/jetson-io/config-by-function.py -l enabled` lists
+`pwm1` and `pwm8`.
+
+**If Jetson-IO crashes with "No APP_b partition found":** the bootloader runs
+from slot B (common after a firmware update) but the SD card has only one
+system partition, `APP`. Back up `/opt/nvidia/jetson-io/Jetson/board.py` and
+add these lines right after `mountpart = "APP_b"` in `Board.__init__`:
+
+```python
+        # no redundant rootfs on this board, so slot B still uses APP
+        if mountpart == "APP_b" and not _board_partition_exists(mountpart):
+            mountpart = "APP"
+```
+
+A JetPack update may overwrite the file; re-apply the lines if the error returns.
 
 ## 5. Wire it up
 

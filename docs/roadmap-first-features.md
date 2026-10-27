@@ -71,8 +71,9 @@ Steps in order, each one testable on its own:
 ## Phase 4: personality
 
 - Animation sequences (poses with timing) played from buttons
-- Sound: Wall-E voice clips through a small speaker/amp (a MAX98357A on I2S
-  uses header pin 35, so the right motor's IN3 moves to another free GPIO)
+- Sound: Wall-E voice clips through a MAX98357A I2S amp and speaker, and an
+  INMP441 I2S mic for voice commands later (header pins 12, 35, 38, 40; motor
+  IN3 already sits on pin 13 to leave them free)
 - Phone or web control panel
 - ROS 2 for navigation and mapping, if we want it: on JetPack 5 (Ubuntu 20.04)
   that means ROS 2 Humble in a container, which NVIDIA's Isaac ROS images provide

@@ -16,7 +16,7 @@ flowchart LR
   BEC -->|V+ screw terminal| PCA[PCA9685<br/>16-ch servo board]
 
   JET -->|pin 1 3.3 V → VCC<br/>pin 3 SDA, pin 5 SCL, bus 8| PCA
-  JET -->|pins 32/33 PWM → ENA/ENB<br/>pins 29,31,35,37 → IN1-IN4| L298
+  JET -->|pins 32/33 PWM → ENA/ENB<br/>pins 29,31,13,37 → IN1-IN4| L298
   L298 -->|OUT1/OUT2| ML[2 x TT motor, left]
   L298 -->|OUT3/OUT4| MR[2 x TT motor, right]
   PCA -->|ch 0-6| SERVOS[Head, neck, eyes, arms]
@@ -39,7 +39,7 @@ flowchart LR
 | 29 | GPIO | L298N IN1 | |
 | 31 | GPIO | L298N IN2 | |
 | 33 | PWM | L298N ENB | **remove the ENB jumper cap** |
-| 35 | GPIO | L298N IN3 | |
+| 13 | GPIO | L298N IN3 | pin 35 is kept free for I2S audio |
 | 37 | GPIO | L298N IN4 | |
 | 39 | GND | L298N GND | ties logic grounds together |
 
