@@ -163,12 +163,17 @@ If you see a different address (0x40 is the factory default), put it in
 **USB cable (simplest, recommended for first tests):** plug it in, done. The
 kernel's `xpad` driver handles it.
 
-**Bluetooth:** the kit has Bluetooth built in.
+**Bluetooth:** the kit has Bluetooth built in. Heads-up: Xbox **Series X|S**
+controllers (and Xbox One pads on recent firmware) pair over Bluetooth LE, and
+the BlueZ 5.53 stack on JetPack 5 fails that with
+`org.bluez.Error.AuthenticationFailed`. For those, use a USB cable or install
+the xpadneo driver (below) before pairing. Older Xbox One pads pair as below.
 
 ```bash
-# Xbox One/Series pads need ERTM off to pair on this kernel
-echo 'options bluetooth disable_ertm=Y' | sudo tee /etc/modprobe.d/xbox-bt.conf
-sudo reboot
+# Older pads need ERTM off. Bluetooth is built into the L4T kernel, so set it
+# through sysfs at boot (setup_jetson.sh does this for you):
+echo 'w /sys/module/bluetooth/parameters/disable_ertm - - - - Y' | sudo tee /etc/tmpfiles.d/xbox-bt.conf
+sudo systemd-tmpfiles --create /etc/tmpfiles.d/xbox-bt.conf
 
 bluetoothctl
   power on

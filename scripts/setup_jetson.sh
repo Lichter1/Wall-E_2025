@@ -75,10 +75,13 @@ fi
 sudo nvpmodel -q || true
 
 step "Bluetooth tweak for Xbox controllers"
-if [ ! -f /etc/modprobe.d/xbox-bt.conf ]; then
-  echo 'options bluetooth disable_ertm=Y' | sudo tee /etc/modprobe.d/xbox-bt.conf >/dev/null
-  NEED_REBOOT=1
+# Bluetooth is built into the L4T kernel, so a modprobe.d option is ignored;
+# set the parameter through sysfs at every boot instead.
+sudo rm -f /etc/modprobe.d/xbox-bt.conf
+if [ ! -f /etc/tmpfiles.d/xbox-bt.conf ]; then
+  echo 'w /sys/module/bluetooth/parameters/disable_ertm - - - - Y' | sudo tee /etc/tmpfiles.d/xbox-bt.conf >/dev/null
 fi
+sudo systemd-tmpfiles --create /etc/tmpfiles.d/xbox-bt.conf || true
 
 if [ "$HEADLESS" -eq 1 ]; then
   step "Boot to console (no desktop)"
