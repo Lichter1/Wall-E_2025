@@ -13,7 +13,7 @@ own and together in a basic teleop. See
 ## Getting started
 
 1. [docs/jetson-setup.md](docs/jetson-setup.md): reflash and prepare the Jetson
-2. [docs/wiring.md](docs/wiring.md): connect the L298N and PCA9685
+2. [docs/wiring.md](docs/wiring.md): power, protection and every connection
 3. Run the tools in order:
 
 ```bash

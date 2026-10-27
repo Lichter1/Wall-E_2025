@@ -50,9 +50,9 @@ at the end.
 ## 2. Power and first boot
 
 Use the 19 V supply for now. On the robot, feed the barrel jack from a
-regulated DC-DC output (12-19 V) rather than straight from the 3S pack: a
+regulated 12 V buck-boost output rather than straight from the 3S pack: a
 3S pack sags towards 9 V under motor load, right at the Jetson's lower limit.
-The electronics thread covers that converter.
+[wiring.md](wiring.md) covers that converter.
 
 First boot runs the Ubuntu setup wizard. Either plug in HDMI/DisplayPort +
 keyboard, or go headless: connect the micro-USB port to your PC and open the

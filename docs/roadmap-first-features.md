@@ -51,7 +51,7 @@ Steps in order, each one testable on its own:
 
 ## Phase 2: robustness
 
-- Battery voltage and current monitoring (INA219/INA226 on the same I2C bus),
+- Battery voltage and current monitoring (INA260 at 0x41 on the same I2C bus),
   low-battery warning and cut-off
 - Logging to file, crash restart via systemd
 - A physical e-stop that cuts motor and servo power independently of software
