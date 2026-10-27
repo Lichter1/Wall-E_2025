@@ -10,6 +10,7 @@ driver (see docs/jetson-setup.md) for the cleanest mapping; the raw
 hid-generic mapping is also handled below.
 """
 
+import asyncio
 import threading
 import time
 
@@ -146,10 +147,18 @@ class XboxController(object):
         return time.monotonic() - self._last_event
 
     def _run(self):
+        # Older python-evdev (Ubuntu 20.04 ships 1.3.0) calls
+        # asyncio.get_event_loop() in InputDevice.close(), which raises in a
+        # thread without a loop. Give this thread its own.
+        asyncio.set_event_loop(asyncio.new_event_loop())
         while self._running:
             try:
                 dev = find_gamepad(self.device_path)
-            except OSError:
+            except Exception as exc:
+                # Never let a bad device kill the reader: teleop would see
+                # "no controller" forever instead of reconnecting.
+                if not isinstance(exc, OSError):
+                    print("xbox-reader: %s: %s" % (type(exc).__name__, exc))
                 dev = None
             if dev is None:
                 time.sleep(1.0)
@@ -170,6 +179,9 @@ class XboxController(object):
                         self._last_event = time.monotonic()
             except OSError:
                 pass  # unplugged or Bluetooth dropped: reconnect
+            except Exception as exc:
+                print("xbox-reader: %s: %s" % (type(exc).__name__, exc))
+                time.sleep(1.0)
             finally:
                 with self._lock:
                     self.connected = False
