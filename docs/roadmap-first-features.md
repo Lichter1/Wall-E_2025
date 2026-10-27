@@ -51,7 +51,7 @@ Steps in order, each one testable on its own:
 
 ## Phase 2: robustness
 
-- Battery voltage and current monitoring (INA219/INA226 on the same I2C bus),
+- Battery voltage and current monitoring (INA260 at 0x41 on the same I2C bus),
   low-battery warning and cut-off
 - Logging to file, crash restart via systemd
 - A physical e-stop that cuts motor and servo power independently of software
@@ -71,8 +71,9 @@ Steps in order, each one testable on its own:
 ## Phase 4: personality
 
 - Animation sequences (poses with timing) played from buttons
-- Sound: Wall-E voice clips through a small speaker/amp (a MAX98357A on I2S
-  uses header pin 35, so the right motor's IN3 moves to another free GPIO)
+- Sound: Wall-E voice clips through a MAX98357A I2S amp and speaker, and an
+  INMP441 I2S mic for voice commands later (header pins 12, 35, 38, 40; motor
+  IN3 already sits on pin 13 to leave them free)
 - Phone or web control panel
 - ROS 2 for navigation and mapping, if we want it: on JetPack 5 (Ubuntu 20.04)
   that means ROS 2 Humble in a container, which NVIDIA's Isaac ROS images provide
