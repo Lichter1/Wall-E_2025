@@ -1,0 +1,16 @@
+[Unit]
+Description=Use software ECDH so Bluetooth LE pairing works (Tegra SE bug)
+# tegra-se-elp's hardware ECDH rejects the keys Bluetooth SMP generates
+# ("Invalid ECDH parameters"), so every BLE pairing fails. Unbinding it lets
+# the kernel fall back to ecdh-generic.
+DefaultDependencies=no
+Before=bluetooth.service
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'd=/sys/bus/platform/drivers/tegra-se-elp; [ -e "$d/3ad0000.se_elp" ] && echo 3ad0000.se_elp > "$d/unbind" || true'
+
+[Install]
+WantedBy=bluetooth.service

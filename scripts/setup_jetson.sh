@@ -5,8 +5,8 @@
 #   bash scripts/setup_jetson.sh              # base setup
 #   bash scripts/setup_jetson.sh --headless   # also boot to console instead of the desktop
 #
-# Covers docs/jetson-setup.md steps 3, 6 and 7. Enabling the PWM pins
-# (step 4, jetson-io) is interactive and is left for you; the script tells
+# Covers docs/jetson-setup.md steps 3, 6 (Bluetooth fixes, xpadneo) and 7.
+# Enabling the PWM pins (step 4, jetson-io) is interactive and is left for you; the script tells
 # you whether it is done.
 
 set -euo pipefail
@@ -82,6 +82,32 @@ if [ ! -f /etc/tmpfiles.d/xbox-bt.conf ]; then
   echo 'w /sys/module/bluetooth/parameters/disable_ertm - - - - Y' | sudo tee /etc/tmpfiles.d/xbox-bt.conf >/dev/null
 fi
 sudo systemd-tmpfiles --create /etc/tmpfiles.d/xbox-bt.conf || true
+
+step "Bluetooth LE pairing fix (Tegra hardware ECDH)"
+# Xbox Series X|S pads pair over BLE; the Tegra security engine's ECDH rejects
+# the pairing keys, so hand ECDH back to the kernel's software implementation.
+SERVICE=walle-bt-ecdh-fix.service
+SRC="$(cd "$(dirname "$0")" && pwd)/systemd/$SERVICE"
+if [ -f "$SRC" ] && ! cmp -s "$SRC" "/etc/systemd/system/$SERVICE"; then
+  sudo cp "$SRC" /etc/systemd/system/
+  sudo systemctl daemon-reload
+fi
+sudo systemctl enable --now "$SERVICE" || true
+
+step "xpadneo driver (Xbox pads over Bluetooth)"
+# v0.10 is the newest release that builds on the 5.10 L4T kernel (later ones
+# need Linux 6.4+); the kernel build uses gnu89, which xpadneo's C rejects.
+if ! dkms status 2>/dev/null | grep -q '^hid-xpadneo'; then
+  sudo -E apt-get install -y dkms "nvidia-l4t-kernel-headers" || true
+  XPADNEO_DIR="$HOME/xpadneo"
+  [ -d "$XPADNEO_DIR/.git" ] || git clone https://github.com/atar-axis/xpadneo.git "$XPADNEO_DIR"
+  git -C "$XPADNEO_DIR" fetch --tags
+  git -C "$XPADNEO_DIR" checkout -f v0.10
+  XPADNEO_MK="$XPADNEO_DIR/hid-xpadneo/src/Makefile"
+  grep -q 'std=gnu11' "$XPADNEO_MK" || echo 'ccflags-y += -std=gnu11' >> "$XPADNEO_MK"
+  (cd "$XPADNEO_DIR" && sudo ./install.sh) || echo "xpadneo install failed; see docs/jetson-setup.md step 6"
+  NEED_REBOOT=1
+fi
 
 if [ "$HEADLESS" -eq 1 ]; then
   step "Boot to console (no desktop)"

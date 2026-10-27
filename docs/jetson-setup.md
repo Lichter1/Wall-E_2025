@@ -163,18 +163,45 @@ If you see a different address (0x40 is the factory default), put it in
 **USB cable (simplest, recommended for first tests):** plug it in, done. The
 kernel's `xpad` driver handles it.
 
-**Bluetooth:** the kit has Bluetooth built in. Heads-up: Xbox **Series X|S**
-controllers (and Xbox One pads on recent firmware) pair over Bluetooth LE, and
-the BlueZ 5.53 stack on JetPack 5 fails that with
-`org.bluez.Error.AuthenticationFailed`. For those, use a USB cable or install
-the xpadneo driver (below) before pairing. Older Xbox One pads pair as below.
+**Bluetooth:** the kit has Bluetooth built in. Xbox **Series X|S** controllers
+(and Xbox One pads on recent firmware) pair over Bluetooth LE, which needs two
+fixes on JetPack 5. `setup_jetson.sh` does both; the manual steps are below.
+
+1. **Software ECDH.** The Tegra security engine's hardware ECDH rejects the keys
+   Bluetooth LE pairing uses (`dmesg` shows
+   `tegra-se-elp 3ad0000.se_elp: Invalid ECDH parameters`), so every pairing
+   ends in `org.bluez.Error.AuthenticationFailed`. A small boot service unbinds
+   that driver before Bluetooth starts so the kernel falls back to software:
+
+   ```bash
+   sudo cp scripts/systemd/walle-bt-ecdh-fix.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now walle-bt-ecdh-fix.service
+   sudo systemctl restart bluetooth
+   ```
+
+   A newer BlueZ or JetPack does not fix this; the bug is in the kernel driver.
+
+2. **xpadneo driver and ERTM off.** [xpadneo](https://github.com/atar-axis/xpadneo)
+   gives the pad its proper layout over Bluetooth. Use **v0.10**: newer releases
+   need Linux 6.4+, and the L4T kernel builds with `-std=gnu89`, so add gnu11:
+
+   ```bash
+   echo 'w /sys/module/bluetooth/parameters/disable_ertm - - - - Y' | sudo tee /etc/tmpfiles.d/xbox-bt.conf
+   sudo systemd-tmpfiles --create /etc/tmpfiles.d/xbox-bt.conf
+   sudo apt install -y dkms nvidia-l4t-kernel-headers
+   git clone https://github.com/atar-axis/xpadneo.git ~/xpadneo && cd ~/xpadneo
+   git checkout v0.10
+   echo 'ccflags-y += -std=gnu11' >> hid-xpadneo/src/Makefile
+   sudo ./install.sh
+   ```
+
+   (Bluetooth is built into the L4T kernel, so `disable_ertm` has to be set
+   through sysfs; a modprobe.d option is ignored.)
+
+Then pair once:
 
 ```bash
-# Older pads need ERTM off. Bluetooth is built into the L4T kernel, so set it
-# through sysfs at boot (setup_jetson.sh does this for you):
-echo 'w /sys/module/bluetooth/parameters/disable_ertm - - - - Y' | sudo tee /etc/tmpfiles.d/xbox-bt.conf
-sudo systemd-tmpfiles --create /etc/tmpfiles.d/xbox-bt.conf
-
 bluetoothctl
   power on
   agent on
@@ -186,10 +213,7 @@ bluetoothctl
   quit
 ```
 
-Over Bluetooth without extra drivers the pad shows up with a slightly
-different axis layout; the code detects and handles that. If you want the
-cleanest mapping and rumble support, the [xpadneo](https://github.com/atar-axis/xpadneo)
-driver can be installed later (needs `nvidia-l4t-kernel-headers` and dkms).
+After that, pressing the Xbox button reconnects it, including after a reboot.
 
 **Check:** `ls /dev/input/by-id/` lists a joystick/event device.
 
