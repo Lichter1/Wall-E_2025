@@ -1,0 +1,59 @@
+# Wall-E 2.0 hardware configuration.
+# Pin numbers are Jetson 40-pin header BOARD numbers (the physical pin, 1-40).
+# Anything left out falls back to the defaults in walle/config.py.
+
+drive:
+  backend: jetson          # jetson | mock (mock prints instead of moving)
+  driver: l298n            # l298n (ENA + IN1/IN2) | pwm_dir (e.g. Cytron MDD10A:
+                           #   per side set pwm_pin + dir_pin instead of in1/in2)
+  pwm_frequency_hz: 1000   # L298N is slow; 1 kHz is a good compromise
+  left:                    # L298N channel A -> left track
+    pwm_pin: 32            # ENA  (hardware PWM, enable with jetson-io first)
+    in1_pin: 29            # IN1
+    in2_pin: 31            # IN2
+    inverted: false        # flip if the track runs backwards
+  right:                   # L298N channel B -> right track
+    pwm_pin: 33            # ENB  (hardware PWM, enable with jetson-io first)
+    in1_pin: 35            # IN3  (I2S audio would also want pin 35; move IN3
+                           #       if a MAX98357A amp is added later)
+    in2_pin: 37            # IN4
+    inverted: false
+  # The drive motors are 3-6 V TT gear motors. The L298N drops about 2 V, so:
+  #   fed from the ~7.5 V buck (planned)  -> ~6 V at the motors, max_speed up to 1.0
+  #   wired straight to the 3S pack       -> keep max_speed at 0.5 or below
+  max_speed: 0.5           # duty-cycle cap; 0.5 is safe on either supply
+  min_duty: 0.25           # duty where the motors just start to turn
+  turn_gain: 0.7           # less than 1 makes steering gentler
+  ramp_per_s: 2.0          # max change in command per second (0 = no ramp)
+
+servos:
+  backend: pca9685         # pca9685 | mock
+  i2c_bus: 8               # Xavier NX: pins 3/5 are bus 8 (Nano: 1, Orin Nano: 7)
+  address: 0x7F            # what the old code used (all address jumpers bridged).
+                           # Confirm with: sudo i2cdetect -y -r 8
+  frequency_hz: 50
+  # Channel map taken from the old Arduino firmware
+  # (ardoino_motor_controler4.0). Names are guesses where the old code only
+  # had abbreviations; rename freely. Limits are deliberately narrow until
+  # each joint is calibrated with tools/servo_test.py.
+  # Servos: MG995 on head, neck and arms; DSpower 21 g micros on the eyes.
+  # All run from the 6 V rail on the PCA9685 V+ terminal.
+  channels:
+    0: {name: head_pan,    min_angle: 45, max_angle: 135, home: 90}
+    1: {name: neck_upper,  min_angle: 45, max_angle: 135, home: 90}
+    2: {name: neck_lower,  min_angle: 45, max_angle: 135, home: 90}
+    3: {name: eye_right,   min_angle: 45, max_angle: 135, home: 90}
+    4: {name: eye_left,    min_angle: 45, max_angle: 135, home: 90}
+    5: {name: arm_right,   min_angle: 45, max_angle: 135, home: 90}
+    6: {name: arm_left,    min_angle: 45, max_angle: 135, home: 90}
+
+# Header pins reserved by the electronics plan, not used by code yet:
+#   7  status LED (output)
+#   16 e-stop auxiliary contact (input)
+#   18 relay that enables drive power (output)
+#   INA260 battery monitor on the same I2C bus at 0x41
+
+controller:
+  device: null             # e.g. /dev/input/event3; null = first gamepad found
+  deadzone: 0.12
+  expo: 0.3                # 0 linear, 1 very soft around centre
