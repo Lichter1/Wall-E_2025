@@ -13,13 +13,13 @@ directly over I2C. That removes the serial protocol, its handshake stalls, and
 a second codebase.
 
 If later we want hard real-time behaviour or a hardware failsafe independent
-of Linux, a small microcontroller can come back as a motor co-processor behind
-the same `DifferentialDrive` interface.
+of Linux, the Arduino Uno you still have can come back as a motor co-processor
+behind the same `DifferentialDrive` interface (see open decisions).
 
 ## Phase 0: bring-up (this PR)
 
 - [x] Config file for pins, servo channels and limits (`config/robot.yaml`)
-- [x] PCA9685 driver without Adafruit Blinka (works on Python 3.6)
+- [x] PCA9685 driver without Adafruit Blinka (no per-board setup on the Xavier NX)
 - [x] Calibrated servos with per-joint soft limits
 - [x] Differential drive: arcade mixing, ramping, minimum duty, speed cap,
       watchdog that stops the motors if the control loop stalls
@@ -59,7 +59,8 @@ Steps in order, each one testable on its own:
 
 ## Phase 3: camera and tracking
 
-- Camera capture through GStreamer (CSI or USB)
+- Camera capture through GStreamer from the MIPI CSI cameras (the Xavier NX
+  kit has two CSI connectors, so a head camera plus a second one fits)
 - Port the old face detection (`FaceDetect&Move.py`, Haar cascade) to a
   Jetson-accelerated detector (jetson-inference / TensorRT)
 - Head tracking with the old PID idea (`PID controal.py`) driving head_pan
@@ -71,14 +72,22 @@ Steps in order, each one testable on its own:
 - Animation sequences (poses with timing) played from buttons
 - Sound: Wall-E voice clips through a small speaker/amp
 - Phone or web control panel
-- If moving to an Orin Nano: consider ROS 2 for navigation and mapping
+- ROS 2 for navigation and mapping, if we want it: on JetPack 5 (Ubuntu 20.04)
+  that means ROS 2 Humble in a container, which NVIDIA's Isaac ROS images provide
 
 ## Open decisions
 
-- **Which Jetson exactly?** Nano vs Orin Nano changes two pin numbers and the
-  JetPack version (see setup guide). Everything else is the same.
-- **Keep an Arduino in the loop?** Current plan says no; revisit in Phase 2
-  if Linux jitter or failsafe behaviour becomes a problem.
+- **Jetson: settled.** Xavier NX dev kit (P3518), JetPack 5.1.x. The config
+  and setup guide target it.
+- **Arduino Uno as a motor watchdog?** Current plan drives the L298N straight
+  from the Jetson, with a software watchdog. The Uno could sit between them
+  instead: the Jetson sends speed commands over USB serial a few times a
+  second, and the Uno stops the motors on its own if they stop arriving
+  (Jetson crash, USB unplugged, Linux hang). That is a real hardware-level
+  failsafe for about 50 lines of firmware and a simpler serial protocol than
+  the old one. Recommendation: start without it to get driving quickly, add
+  it in Phase 2 together with the physical e-stop. The Raspberry Pi 3 is not
+  needed in the new design.
 - **L298N long term.** It wastes ~2-4 V as heat and limits current. A MOSFET
   driver (e.g. Cytron MDD10A or a BTS7960 pair) is a drop-in upgrade for the
   same pin interface; flagged for the electronics wishlist.

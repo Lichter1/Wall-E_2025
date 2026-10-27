@@ -6,8 +6,7 @@ drive:
   backend: jetson          # jetson | mock (mock prints instead of moving)
   pwm_frequency_hz: 1000   # L298N is slow; 1 kHz is a good compromise
   left:                    # L298N channel A -> left track
-    pwm_pin: 32            # ENA  (hardware PWM, enable with jetson-io first;
-                           #       on an Orin Nano use pin 15 instead)
+    pwm_pin: 32            # ENA  (hardware PWM, enable with jetson-io first)
     in1_pin: 29            # IN1
     in2_pin: 31            # IN2
     inverted: false        # flip if the track runs backwards
@@ -23,9 +22,9 @@ drive:
 
 servos:
   backend: pca9685         # pca9685 | mock
-  i2c_bus: 1               # Nano: bus 1 on pins 3/5. Orin Nano: bus 7.
+  i2c_bus: 8               # Xavier NX: pins 3/5 are bus 8 (Nano: 1, Orin Nano: 7)
   address: 0x7F            # what the old code used (all address jumpers bridged).
-                           # Confirm with: sudo i2cdetect -y -r 1
+                           # Confirm with: sudo i2cdetect -y -r 8
   frequency_hz: 50
   # Channel map taken from the old Arduino firmware
   # (ardoino_motor_controler4.0). Names are guesses where the old code only

@@ -1,7 +1,7 @@
 """Minimal PCA9685 16-channel PWM driver over smbus2.
 
-Talking to the chip directly keeps us off Adafruit Blinka, which needs a
-newer Python than JetPack 4.6 ships and has to be taught each Jetson model.
+Talking to the chip directly keeps us off Adafruit Blinka, which has to be
+taught each Jetson model and its I2C bus numbering.
 The register sequence follows the NXP PCA9685 datasheet.
 """
 

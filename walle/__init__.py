@@ -1,7 +1,7 @@
 """Wall-E 2.0 robot control package (Jetson edition).
 
-Kept compatible with Python 3.6 so it runs on the stock JetPack 4.6 image
-used by the original Jetson Nano, as well as newer JetPack releases.
+Targets the Jetson Xavier NX on JetPack 5 (Python 3.8), and stays
+compatible with Python 3.6 so it also runs on a Jetson Nano's JetPack 4.6.
 """
 
 __version__ = "0.1.0"

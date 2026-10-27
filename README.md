@@ -1,7 +1,7 @@
 # Wall-E_2025
 
 Wall-E 2.0: the relaunch of the Wall-E replica robot, now running on an
-NVIDIA Jetson. The original Raspberry Pi + Arduino code lives in
+NVIDIA Jetson Xavier NX. The original Raspberry Pi + Arduino code lives in
 [Lichter1/Wall-E](https://github.com/Lichter1/Wall-E).
 
 ## Status

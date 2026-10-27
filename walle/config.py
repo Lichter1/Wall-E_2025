@@ -23,7 +23,7 @@ DEFAULTS = {
     },
     "servos": {
         "backend": "pca9685",      # pca9685 | mock
-        "i2c_bus": 1,
+        "i2c_bus": 8,              # Xavier NX header pins 3/5
         "address": 0x7F,
         "frequency_hz": 50,
         "channels": {},

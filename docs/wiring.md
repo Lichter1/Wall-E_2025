@@ -7,14 +7,14 @@ for whatever that settles on.
 ```mermaid
 flowchart LR
   BAT[Battery pack] --> FUSE[Fuse + main switch]
-  FUSE --> DCJ[DC-DC 5 V 4 A+<br/>Jetson supply]
+  FUSE --> DCJ[DC-DC 12-19 V<br/>Jetson supply]
   FUSE --> BEC[UBEC 5-6 V<br/>servo supply]
   FUSE --> L298[L298N<br/>12 V input]
 
-  DCJ -->|barrel jack| JET[Jetson]
+  DCJ -->|barrel jack| JET[Jetson Xavier NX]
   BEC -->|V+ screw terminal| PCA[PCA9685<br/>16-ch servo board]
 
-  JET -->|pin 1 3.3 V → VCC<br/>pin 3 SDA, pin 5 SCL| PCA
+  JET -->|pin 1 3.3 V → VCC<br/>pin 3 SDA, pin 5 SCL, bus 8| PCA
   JET -->|pins 32/33 PWM → ENA/ENB<br/>pins 29,31,35,37 → IN1-IN4| L298
   L298 -->|OUT1/OUT2| ML[Left track motor]
   L298 -->|OUT3/OUT4| MR[Right track motor]
@@ -31,16 +31,21 @@ flowchart LR
 | Jetson pin | Name | Goes to | Notes |
 |---|---|---|---|
 | 1 | 3.3 V | PCA9685 VCC | logic power only, a few mA |
-| 3 | I2C SDA | PCA9685 SDA | bus 1 on Nano, bus 7 on Orin Nano |
+| 3 | I2C SDA | PCA9685 SDA | I2C bus 8 on the Xavier NX |
 | 5 | I2C SCL | PCA9685 SCL | |
 | 6 | GND | PCA9685 GND | |
-| 32 | PWM0 | L298N ENA | **remove the ENA jumper cap**. Orin Nano: use pin 15 |
+| 32 | PWM | L298N ENA | **remove the ENA jumper cap** |
 | 29 | GPIO | L298N IN1 | |
 | 31 | GPIO | L298N IN2 | |
-| 33 | PWM2 | L298N ENB | **remove the ENB jumper cap** |
+| 33 | PWM | L298N ENB | **remove the ENB jumper cap** |
 | 35 | GPIO | L298N IN3 | |
 | 37 | GPIO | L298N IN4 | |
 | 39 | GND | L298N GND | ties logic grounds together |
+
+**Four drive motors, two channels:** wire the two left motors in parallel to
+OUT1/OUT2 and the two right motors to OUT3/OUT4. Four 12 V motors can pull
+more than the L298N's 2 A per channel when starting or stalled, which is
+why the roadmap suggests a stronger driver later.
 
 ## Rules that protect the Jetson
 
