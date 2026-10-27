@@ -13,6 +13,7 @@ CALIBRATION_PATH = os.path.join(REPO_ROOT, "config", "servo_calibration.yaml")
 DEFAULTS = {
     "drive": {
         "backend": "jetson",       # jetson | mock
+        "driver": "l298n",         # l298n | pwm_dir
         "pwm_frequency_hz": 1000,
         "left": {"pwm_pin": 32, "in1_pin": 29, "in2_pin": 31, "inverted": False},
         "right": {"pwm_pin": 33, "in1_pin": 35, "in2_pin": 37, "inverted": False},

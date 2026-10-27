@@ -192,3 +192,42 @@ def test_calibration_overlays_robot_yaml(tmp_path):
     assert cfg["servos"]["channels"][0]["min_angle"] == 60
     assert cfg["servos"]["channels"][0]["name"] == "head_pan"
     assert cfg["servos"]["address"] == 0x7F
+
+
+class FakeGPIO(object):
+    OUT, HIGH, LOW = "out", 1, 0
+
+    def __init__(self):
+        self.levels = {}
+
+    def setup(self, pin, mode, initial=0):
+        self.levels[pin] = initial
+
+    def output(self, pin, level):
+        self.levels[pin] = level
+
+    def PWM(self, pin, freq):
+        gpio = self
+
+        class P(object):
+            def start(self, d):
+                gpio.levels[("pwm", pin)] = d
+
+            def ChangeDutyCycle(self, d):
+                gpio.levels[("pwm", pin)] = d
+
+            def stop(self):
+                pass
+        return P()
+
+
+def test_l298n_and_pwm_dir_motors():
+    from walle.hardware.drive import JetsonMotor
+    gpio = FakeGPIO()
+    m = JetsonMotor(gpio, pwm_pin=32, frequency_hz=1000, in1_pin=29, in2_pin=31)
+    m.set(-0.5)
+    assert (gpio.levels[29], gpio.levels[31], gpio.levels[("pwm", 32)]) == (0, 1, 50.0)
+    m = JetsonMotor(gpio, pwm_pin=33, frequency_hz=1000, dir_pin=35, inverted=True)
+    m.set(0.25)
+    assert (gpio.levels[35], gpio.levels[("pwm", 33)]) == (0, 25.0)
+    assert 37 not in gpio.levels

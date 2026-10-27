@@ -4,6 +4,8 @@
 
 drive:
   backend: jetson          # jetson | mock (mock prints instead of moving)
+  driver: l298n            # l298n (ENA + IN1/IN2) | pwm_dir (e.g. Cytron MDD10A:
+                           #   per side set pwm_pin + dir_pin instead of in1/in2)
   pwm_frequency_hz: 1000   # L298N is slow; 1 kHz is a good compromise
   left:                    # L298N channel A -> left track
     pwm_pin: 32            # ENA  (hardware PWM, enable with jetson-io first)
@@ -38,6 +40,12 @@ servos:
     4: {name: eye_left,    min_angle: 45, max_angle: 135, home: 90}
     5: {name: arm_right,   min_angle: 45, max_angle: 135, home: 90}
     6: {name: arm_left,    min_angle: 45, max_angle: 135, home: 90}
+
+# Header pins reserved by the electronics plan, not used by code yet:
+#   7  status LED (output)
+#   16 e-stop auxiliary contact (input)
+#   18 relay that enables drive power (output)
+#   INA260 battery monitor on the same I2C bus at 0x41
 
 controller:
   device: null             # e.g. /dev/input/event3; null = first gamepad found

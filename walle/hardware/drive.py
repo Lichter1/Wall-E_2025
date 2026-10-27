@@ -1,9 +1,14 @@
-"""Differential (tank) drive on an L298N dual H-bridge.
+"""Differential (tank) drive on a dual H-bridge.
 
-Each track motor uses one hardware PWM pin on the Jetson for speed (ENA/ENB)
-and two plain GPIOs for direction (IN1/IN2, IN3/IN4). The Jetson's 3.3 V
-logic is above the L298N's 2.3 V input-high threshold, so no level shifter
-is needed, but the grounds must be tied together.
+Two driver styles are supported, chosen by drive.driver in robot.yaml:
+
+  l298n    one hardware PWM pin for speed (ENA/ENB) and two GPIOs for
+           direction (IN1/IN2, IN3/IN4)
+  pwm_dir  one PWM pin and one DIR pin per channel (Cytron MDD10A and
+           similar MOSFET drivers)
+
+The Jetson's 3.3 V logic is a valid high for both, so no level shifter is
+needed, but the grounds must be tied together.
 """
 
 import threading
@@ -40,14 +45,22 @@ def to_duty(value, min_duty, max_speed):
 
 
 class JetsonMotor(object):
-    """One L298N channel driven by Jetson.GPIO (BOARD pin numbering)."""
+    """One motor channel driven by Jetson.GPIO (BOARD pin numbering).
 
-    def __init__(self, gpio, pwm_pin, in1_pin, in2_pin, frequency_hz, inverted=False):
+    Pass in1_pin and in2_pin for an L298N, or dir_pin for a PWM+DIR driver.
+    """
+
+    def __init__(self, gpio, pwm_pin, frequency_hz, in1_pin=None, in2_pin=None,
+                 dir_pin=None, inverted=False):
+        if dir_pin is None and (in1_pin is None or in2_pin is None):
+            raise ValueError("need in1_pin and in2_pin, or dir_pin")
         self.gpio = gpio
         self.in1 = in1_pin
         self.in2 = in2_pin
+        self.dir = dir_pin
         self.inverted = inverted
-        for pin in (in1_pin, in2_pin, pwm_pin):
+        pins = (dir_pin,) if dir_pin is not None else (in1_pin, in2_pin)
+        for pin in pins + (pwm_pin,):
             gpio.setup(pin, gpio.OUT, initial=gpio.LOW)
         self.pwm = gpio.PWM(pwm_pin, frequency_hz)
         self.pwm.start(0)
@@ -56,7 +69,10 @@ class JetsonMotor(object):
         """duty in [-1, 1]; sign is direction."""
         if self.inverted:
             duty = -duty
-        if duty > 0:
+        if self.dir is not None:
+            # PWM+DIR drivers brake/coast on PWM low; DIR only matters while moving.
+            self.gpio.output(self.dir, self.gpio.HIGH if duty >= 0 else self.gpio.LOW)
+        elif duty > 0:
             self.gpio.output(self.in1, self.gpio.HIGH)
             self.gpio.output(self.in2, self.gpio.LOW)
         elif duty < 0:
@@ -164,6 +180,17 @@ class DifferentialDrive(object):
         self.right.close()
 
 
+DRIVER_PINS = {
+    "l298n": ("pwm_pin", "in1_pin", "in2_pin", "inverted"),
+    "pwm_dir": ("pwm_pin", "dir_pin", "inverted"),
+}
+
+
+def _pick(side_cfg, keys):
+    # Defaults carry L298N pins; only pass the ones this driver uses.
+    return {k: side_cfg[k] for k in keys if k in side_cfg}
+
+
 def open_drive(drive_cfg, mock=False, verbose=True):
     """Build a DifferentialDrive from the 'drive' config section."""
     gpio = None
@@ -174,8 +201,9 @@ def open_drive(drive_cfg, mock=False, verbose=True):
         gpio.setwarnings(False)
         gpio.setmode(gpio.BOARD)
         freq = drive_cfg["pwm_frequency_hz"]
-        left = JetsonMotor(gpio, frequency_hz=freq, **drive_cfg["left"])
-        right = JetsonMotor(gpio, frequency_hz=freq, **drive_cfg["right"])
+        keys = DRIVER_PINS[drive_cfg.get("driver", "l298n")]
+        left = JetsonMotor(gpio, frequency_hz=freq, **_pick(drive_cfg["left"], keys))
+        right = JetsonMotor(gpio, frequency_hz=freq, **_pick(drive_cfg["right"], keys))
     drive = DifferentialDrive(left, right,
                               max_speed=drive_cfg["max_speed"],
                               min_duty=drive_cfg["min_duty"],
