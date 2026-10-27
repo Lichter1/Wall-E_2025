@@ -231,3 +231,44 @@ def test_l298n_and_pwm_dir_motors():
     m.set(0.25)
     assert (gpio.levels[35], gpio.levels[("pwm", 33)]) == (0, 25.0)
     assert 37 not in gpio.levels
+
+
+def test_controller_reader_survives_evdev_close_in_thread(monkeypatch):
+    # python-evdev 1.3 (Ubuntu 20.04) needs an asyncio loop in close(); the
+    # reader thread used to die there and report "no controller" forever.
+    import asyncio
+    import time
+    import types
+    from walle.inputs import xbox
+
+    class FakeDevice(object):
+        def __init__(self, path):
+            self.path = path
+            self.name = "fake " + path
+
+        def capabilities(self, absinfo=False):
+            if self.path == "keyboard":
+                return {xbox.EV_KEY: [30]}
+            info = types.SimpleNamespace(min=-32768, max=32767)
+            axes = [(ABS_X, info)] if absinfo else [ABS_X]
+            return {xbox.EV_KEY: [0x130], xbox.EV_ABS: axes}
+
+        def close(self):
+            asyncio.get_event_loop()
+
+        def read_loop(self):
+            yield types.SimpleNamespace(type=xbox.EV_KEY, code=0x130, value=1)
+            while True:
+                time.sleep(0.01)
+
+    fake = types.SimpleNamespace(list_devices=lambda: ["keyboard", "pad"], InputDevice=FakeDevice)
+    monkeypatch.setitem(sys.modules, "evdev", fake)
+    pad = xbox.XboxController()
+    try:
+        deadline = time.monotonic() + 2.0
+        while not pad.connected and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert pad.connected
+        assert pad.name == "fake pad"
+    finally:
+        pad.close()
