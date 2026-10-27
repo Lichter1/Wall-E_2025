@@ -66,7 +66,16 @@ automatically off. Join your Wi-Fi in the wizard or later with `nmtui`.
 
 ## 3. Base system
 
-SSH in from your PC (`ssh walle@walle.local`) and run:
+**Shortcut:** steps 3, 6 (Bluetooth tweak) and 7 are automated. SSH in from
+your PC (`ssh walle@walle.local`) and run
+
+```bash
+git clone https://github.com/Lichter1/Wall-E_2025.git ~/Wall-E_2025
+bash ~/Wall-E_2025/scripts/setup_jetson.sh      # add --headless to drop the desktop
+sudo reboot
+```
+
+then continue at step 4. The manual commands are below if you prefer them.
 
 ```bash
 sudo apt update && sudo apt upgrade -y
