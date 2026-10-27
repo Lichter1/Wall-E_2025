@@ -9,15 +9,16 @@ flowchart LR
   BAT[Battery pack] --> FUSE[Fuse + main switch]
   FUSE --> DCJ[DC-DC 12-19 V<br/>Jetson supply]
   FUSE --> BEC[UBEC 5-6 V<br/>servo supply]
-  FUSE --> L298[L298N<br/>12 V input]
+  FUSE --> MBUCK[XL4015 buck ~7.5 V<br/>motor supply]
+  MBUCK --> L298[L298N]
 
   DCJ -->|barrel jack| JET[Jetson Xavier NX]
   BEC -->|V+ screw terminal| PCA[PCA9685<br/>16-ch servo board]
 
   JET -->|pin 1 3.3 V → VCC<br/>pin 3 SDA, pin 5 SCL, bus 8| PCA
   JET -->|pins 32/33 PWM → ENA/ENB<br/>pins 29,31,35,37 → IN1-IN4| L298
-  L298 -->|OUT1/OUT2| ML[Left track motor]
-  L298 -->|OUT3/OUT4| MR[Right track motor]
+  L298 -->|OUT1/OUT2| ML[2 x TT motor, left]
+  L298 -->|OUT3/OUT4| MR[2 x TT motor, right]
   PCA -->|ch 0-6| SERVOS[Head, neck, eyes, arms]
 
   GND((Common ground)) --- JET
@@ -43,9 +44,12 @@ flowchart LR
 | 39 | GND | L298N GND | ties logic grounds together |
 
 **Four drive motors, two channels:** wire the two left motors in parallel to
-OUT1/OUT2 and the two right motors to OUT3/OUT4. Four 12 V motors can pull
-more than the L298N's 2 A per channel when starting or stalled, which is
-why the roadmap suggests a stronger driver later.
+OUT1/OUT2 and the two right motors to OUT3/OUT4. They are 3-6 V TT gear
+motors, so the L298N is fed from a buck set to about 7.5 V (the L298N drops
+about 2 V, leaving ~6 V at the motors). Two TT motors per channel stay well
+inside the L298N's 2 A rating. Until that buck is in, `drive.max_speed: 0.5`
+in `config/robot.yaml` keeps the average motor voltage near 6 V on the raw
+pack.
 
 ## Rules that protect the Jetson
 

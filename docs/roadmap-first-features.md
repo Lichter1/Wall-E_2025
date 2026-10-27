@@ -59,8 +59,9 @@ Steps in order, each one testable on its own:
 
 ## Phase 3: camera and tracking
 
-- Camera capture through GStreamer from the MIPI CSI cameras (the Xavier NX
-  kit has two CSI connectors, so a head camera plus a second one fits)
+- Camera capture from an IMX219 160° CSI camera through GStreamer
+  (`nvarguscamerasrc`). The OV5647 fisheye modules on hand are not supported
+  by the stock Jetson drivers, so they are out.
 - Port the old face detection (`FaceDetect&Move.py`, Haar cascade) to a
   Jetson-accelerated detector (jetson-inference / TensorRT)
 - Head tracking with the old PID idea (`PID controal.py`) driving head_pan
@@ -70,7 +71,8 @@ Steps in order, each one testable on its own:
 ## Phase 4: personality
 
 - Animation sequences (poses with timing) played from buttons
-- Sound: Wall-E voice clips through a small speaker/amp
+- Sound: Wall-E voice clips through a small speaker/amp (a MAX98357A on I2S
+  uses header pin 35, so the right motor's IN3 moves to another free GPIO)
 - Phone or web control panel
 - ROS 2 for navigation and mapping, if we want it: on JetPack 5 (Ubuntu 20.04)
   that means ROS 2 Humble in a container, which NVIDIA's Isaac ROS images provide
@@ -88,6 +90,6 @@ Steps in order, each one testable on its own:
   the old one. Recommendation: start without it to get driving quickly, add
   it in Phase 2 together with the physical e-stop. The Raspberry Pi 3 is not
   needed in the new design.
-- **L298N long term.** It wastes ~2-4 V as heat and limits current. A MOSFET
-  driver (e.g. Cytron MDD10A or a BTS7960 pair) is a drop-in upgrade for the
-  same pin interface; flagged for the electronics wishlist.
+- **Motor driver.** With 3-6 V TT motors the L298N is adequate (its ~2 V drop
+  is absorbed by the 7.5 V motor buck). If the motors are ever upgraded, the
+  code already supports PWM+DIR drivers (`drive.driver: pwm_dir`).

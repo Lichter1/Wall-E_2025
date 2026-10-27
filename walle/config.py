@@ -17,7 +17,7 @@ DEFAULTS = {
         "pwm_frequency_hz": 1000,
         "left": {"pwm_pin": 32, "in1_pin": 29, "in2_pin": 31, "inverted": False},
         "right": {"pwm_pin": 33, "in1_pin": 35, "in2_pin": 37, "inverted": False},
-        "max_speed": 0.6,          # fraction of full duty, raise once tuned
+        "max_speed": 0.5,          # safe for 3-6 V TT motors even on the raw 3S pack
         "min_duty": 0.25,          # duty at which the motors start to turn
         "turn_gain": 0.7,
         "ramp_per_s": 2.0,         # full scale change takes 0.5 s

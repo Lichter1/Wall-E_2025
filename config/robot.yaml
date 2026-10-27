@@ -14,10 +14,14 @@ drive:
     inverted: false        # flip if the track runs backwards
   right:                   # L298N channel B -> right track
     pwm_pin: 33            # ENB  (hardware PWM, enable with jetson-io first)
-    in1_pin: 35            # IN3
+    in1_pin: 35            # IN3  (I2S audio would also want pin 35; move IN3
+                           #       if a MAX98357A amp is added later)
     in2_pin: 37            # IN4
     inverted: false
-  max_speed: 0.6           # cap on duty cycle; start low, raise after testing
+  # The drive motors are 3-6 V TT gear motors. The L298N drops about 2 V, so:
+  #   fed from the ~7.5 V buck (planned)  -> ~6 V at the motors, max_speed up to 1.0
+  #   wired straight to the 3S pack       -> keep max_speed at 0.5 or below
+  max_speed: 0.5           # duty-cycle cap; 0.5 is safe on either supply
   min_duty: 0.25           # duty where the motors just start to turn
   turn_gain: 0.7           # less than 1 makes steering gentler
   ramp_per_s: 2.0          # max change in command per second (0 = no ramp)
@@ -32,6 +36,8 @@ servos:
   # (ardoino_motor_controler4.0). Names are guesses where the old code only
   # had abbreviations; rename freely. Limits are deliberately narrow until
   # each joint is calibrated with tools/servo_test.py.
+  # Servos: MG995 on head, neck and arms; DSpower 21 g micros on the eyes.
+  # All run from the 6 V rail on the PCA9685 V+ terminal.
   channels:
     0: {name: head_pan,    min_angle: 45, max_angle: 135, home: 90}
     1: {name: neck_upper,  min_angle: 45, max_angle: 135, home: 90}
